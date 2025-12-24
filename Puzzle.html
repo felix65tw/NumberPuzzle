@@ -144,7 +144,7 @@
             font-weight: bold;
             cursor: pointer;
             outline: none;
-            transition: opacity 0.2s; /* 增加過渡效果 */
+            transition: opacity 0.2s;
         }
 
         button:active {
@@ -152,14 +152,14 @@
             transform: scale(0.98);
         }
 
-        /* 新增：禁用按鈕的樣式 */
+        /* 禁用按鈕樣式 */
         button.disabled {
-            opacity: 0.5;           /* 虛化 */
-            pointer-events: none;   /* 禁止點擊 */
+            opacity: 0.5;
+            pointer-events: none;
             cursor: default;
         }
 
-        /* --- Overlays --- */
+        /* --- Overlays (通用設定) --- */
         .overlay, .bible-overlay, .settings-overlay {
             position: absolute;
             top: 0;
@@ -182,6 +182,7 @@
             pointer-events: auto;
         }
 
+        /* 勝利畫面 (保留半透明，讓玩家看到最後的棋盤) */
         .overlay {
             background: rgba(238, 228, 218, 0.85);
             padding-bottom: 40%;
@@ -194,8 +195,9 @@
             color: #776e65;
         }
 
+        /* 聖經畫面 (完全不透明背景，遮蓋後方) */
         .bible-overlay {
-            background-color: var(--bg-color); 
+            background-color: var(--bg-color); /* 使用底色 */
             z-index: 20;
             padding: 20px;
             color: #5d554c;
@@ -217,8 +219,9 @@
             font-weight: bold;
         }
 
+        /* 設定畫面 (完全不透明背景，遮蓋後方) */
         .settings-overlay {
-            background: rgba(250, 248, 239, 0.98);
+            background-color: var(--bg-color); /* 使用底色 */
             z-index: 25;
         }
         .settings-menu {
@@ -308,7 +311,6 @@
     </div>
 
     <div class="controls">
-        <!-- 這裡新增了 id="restart-btn" -->
         <button id="restart-btn" onclick="initGame()">Restart Level</button>
     </div>
 
@@ -324,7 +326,7 @@
         const settingsSize = document.getElementById('settings-size');
         const soundBtn = document.getElementById('sound-btn');
         const previewBtn = document.getElementById('preview-btn');
-        const restartBtn = document.getElementById('restart-btn'); // 取得 Restart 按鈕
+        const restartBtn = document.getElementById('restart-btn');
 
         let gridSize = 4;
         let tiles = [];
@@ -421,7 +423,6 @@
             bibleOverlay.classList.remove('show');
             settingsOverlay.classList.remove('show');
 
-            // 確保遊戲重新開始時，Restart 按鈕是可用的
             restartBtn.classList.remove('disabled');
 
             cheatSequence = [];
@@ -458,13 +459,11 @@
         function openSettings() {
             showMainMenu();
             settingsOverlay.classList.add('show');
-            // 開啟設定時，禁用 Restart 按鈕
             restartBtn.classList.add('disabled');
         }
 
         function closeSettings() {
             settingsOverlay.classList.remove('show');
-            // 關閉設定時，恢復 Restart 按鈕
             restartBtn.classList.remove('disabled');
         }
 
@@ -511,13 +510,11 @@
             if (previewTimeout) clearTimeout(previewTimeout);
             overlay.classList.add('show');
             SoundManager.playWin();
-            // 勝利時也建議禁用 Restart 按鈕，因為有 Play Again
             restartBtn.classList.add('disabled');
         }
 
         function closeBible() {
             bibleOverlay.classList.remove('show');
-            // 關閉聖經時，恢復 Restart 按鈕
             restartBtn.classList.remove('disabled');
         }
 
@@ -592,7 +589,6 @@
 
                 if (seqStr === '85893861') {
                     bibleOverlay.classList.add('show');
-                    // 開啟聖經時，禁用 Restart 按鈕
                     restartBtn.classList.add('disabled');
                     cheatSequence = [];
                 }

@@ -115,7 +115,6 @@
             cursor: pointer;
             transition: transform 0.1s ease-in-out, background-color 0.2s;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
-            /* Color is handled by JS */
         }
 
         .tile.selected {
@@ -188,7 +187,8 @@
         }
 
         .bible-overlay {
-            background: rgba(250, 248, 239, 0.98);
+            /* 修改處：使用變數設定背景，使其與底色一致，不透明 */
+            background-color: var(--bg-color); 
             z-index: 20;
             padding: 20px;
             color: #5d554c;
@@ -327,19 +327,19 @@
         
         // Settings
         let isSoundOn = true;
-        let isPreviewEnabled = true; // New: Preview setting
-        let previewTimeout = null;   // To manage the delay
+        let isPreviewEnabled = true; 
+        let previewTimeout = null;
 
-        // Wood tone palette: Lightest to Darkest (8 levels)
+        // Wood tone palette
         const woodColors = [
-            { bg: "#eee4da", text: "#776e65" }, // 1. Cream (Lightest)
+            { bg: "#eee4da", text: "#776e65" }, // 1. Cream
             { bg: "#ede0c8", text: "#776e65" }, // 2. Beige
             { bg: "#dcb386", text: "#776e65" }, // 3. Light Oak
             { bg: "#c59b6d", text: "#f9f6f2" }, // 4. Caramel
             { bg: "#a87f56", text: "#f9f6f2" }, // 5. Amber
             { bg: "#8b633e", text: "#f9f6f2" }, // 6. Walnut
             { bg: "#6e4727", text: "#f9f6f2" }, // 7. Dark Coffee
-            { bg: "#52331b", text: "#f9f6f2" }  // 8. Ebony (Darkest)
+            { bg: "#52331b", text: "#f9f6f2" }  // 8. Ebony
         ];
 
         const SoundManager = {
@@ -399,13 +399,12 @@
                 gridSize = newSize;
             }
 
-            // Cleanup previous states
             if (timerInterval) clearInterval(timerInterval);
             if (previewTimeout) clearTimeout(previewTimeout);
             
             moves = 0;
             timer = 0;
-            isGameActive = false; // Disable interaction initially
+            isGameActive = false; 
             moveDisplay.innerText = moves;
             timeDisplay.innerText = timer;
             
@@ -420,34 +419,28 @@
 
             const totalTiles = gridSize * gridSize;
             
-            // 1. Create Solved State First
             tiles = Array.from({length: totalTiles}, (_, i) => (i + 1) % totalTiles);
             emptyIndex = totalTiles - 1;
 
             gridElement.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
             gridElement.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
 
-            // Render solved state immediately
             render();
 
-            // 2. Decide flow based on Preview setting
             if (isPreviewEnabled) {
-                // Wait 2 seconds, then shuffle and start
                 previewTimeout = setTimeout(() => {
                     startGameLogic();
                 }, 2000);
             } else {
-                // Start immediately
                 startGameLogic();
             }
         }
 
-        // Logic to shuffle and enable game
         function startGameLogic() {
             shuffleTiles(gridSize * 50); 
             render();
             startTimer();
-            isGameActive = true; // Enable interaction
+            isGameActive = true; 
         }
 
         function openSettings() {
@@ -530,7 +523,6 @@
                     tile.innerText = num;
                     tile.setAttribute('data-val', num);
                     
-                    // --- Dynamic Coloring Logic ---
                     const groupIndex = Math.floor((num - 1) / gridSize);
                     const colorIndex = groupIndex % woodColors.length;
                     const style = woodColors[colorIndex];

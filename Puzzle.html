@@ -181,7 +181,7 @@
 
         /* --- Overlays --- */
         
-        /* 1. 勝利畫面 (保留在棋盤內的絕對定位) */
+        /* 勝利畫面 (保留在棋盤內的絕對定位) */
         .overlay {
             position: absolute;
             top: 0;
@@ -211,14 +211,14 @@
             color: #776e65;
         }
 
-        /* 2. 聖經畫面 & 設定畫面 (改為全螢幕固定定位，蓋住整個網頁) */
+        /* 聖經畫面 & 設定畫面 (全螢幕固定定位) */
         .bible-overlay, .settings-overlay {
-            position: fixed; /* 關鍵修改：固定在視窗，不隨棋盤大小限制 */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1000; /* 最高層級 */
+            z-index: 1000;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
@@ -226,7 +226,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background-color: var(--bg-color); /* 完全不透明背景 */
+            background-color: var(--bg-color);
             padding: 20px;
         }
 
@@ -250,7 +250,6 @@
             margin-bottom: 20px;
             width: 100%;
             max-width: 500px;
-            /* 增加滾動功能，防止手機版文字被切掉 */
             max-height: 60vh; 
             overflow-y: auto;
             font-family: "KaiTi", "BiauKai", serif;
@@ -309,8 +308,6 @@
         </div>
     </div>
 
-    <!-- 將全螢幕 Overlay 移出 game-container，結構更清晰，但 CSS position:fixed 已確保覆蓋 -->
-    
     <div class="bible-overlay" id="bible-overlay">
         <div class="bible-title">詩篇 23 篇</div>
         <div class="bible-text">
@@ -373,21 +370,19 @@
         let timerInterval = null;
         let isGameActive = false;
         
-        // Settings
         let isSoundOn = true;
         let isPreviewEnabled = true; 
         let previewTimeout = null;
 
-        // Wood tone palette
         const woodColors = [
-            { bg: "#eee4da", text: "#776e65" }, // 1
-            { bg: "#ede0c8", text: "#776e65" }, // 2
-            { bg: "#dcb386", text: "#776e65" }, // 3
-            { bg: "#c59b6d", text: "#f9f6f2" }, // 4
-            { bg: "#a87f56", text: "#f9f6f2" }, // 5
-            { bg: "#8b633e", text: "#f9f6f2" }, // 6
-            { bg: "#6e4727", text: "#f9f6f2" }, // 7
-            { bg: "#52331b", text: "#f9f6f2" }  // 8
+            { bg: "#eee4da", text: "#776e65" }, 
+            { bg: "#ede0c8", text: "#776e65" }, 
+            { bg: "#dcb386", text: "#776e65" }, 
+            { bg: "#c59b6d", text: "#f9f6f2" }, 
+            { bg: "#a87f56", text: "#f9f6f2" }, 
+            { bg: "#8b633e", text: "#f9f6f2" }, 
+            { bg: "#6e4727", text: "#f9f6f2" }, 
+            { bg: "#52331b", text: "#f9f6f2" } 
         ];
 
         const SoundManager = {
@@ -397,9 +392,18 @@
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
             },
+            // 檢查並喚醒 AudioContext
+            checkResume: function() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
             playMove: function() {
                 if (!isSoundOn) return;
                 if (!this.ctx) this.init();
+                
+                this.checkResume();
+
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'triangle';
@@ -415,6 +419,9 @@
             playWin: function() {
                 if (!isSoundOn) return;
                 if (!this.ctx) this.init();
+                
+                this.checkResume();
+
                 const notes = [523.25, 659.25, 783.99, 1046.50];
                 const now = this.ctx.currentTime;
                 notes.forEach((freq, i) => {
@@ -442,6 +449,7 @@
 
         function initGame(newSize = null) {
             SoundManager.init();
+            SoundManager.checkResume();
             
             if (newSize) {
                 gridSize = newSize;
@@ -632,7 +640,7 @@
 
                 if (seqStr.endsWith('1588')) {
                     isSwapMode = true;
-                    alert("God Mode Activated!\nClick the first tile, then click the second tile to swap.");
+                    // Alert 移除，防止音效問題和干擾
                     return;
                 }
             }

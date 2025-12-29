@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Puzzle</title>
+    <style>
+        :root {
+            --bg-color: #faf8ef;            /* Background: Off-white */
+            --grid-bg-color: #bbada0;       /* Grid container: Grayish Brown */
+            --tile-text-dark: #776e65;      /* Dark Text */
+            --tile-text-light: #f9f6f2;     /* Light Text */
+            --gap-size: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--tile-text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 40px;
+            margin: 0;
+            font-weight: bold;
+            color: #776e65;
+            letter-spacing: 2px;
+        }
+
+        .info-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .score-container {
+            background: #bbada0;
+            padding: 5px 15px;
+            border-radius: 5px;
+            color: white;
+            text-align: center;
+            min-width: 70px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+        }
+        
+        .score-container:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        }
+
+        .score-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #eee4da;
+        }
+
+        .score-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .settings-btn {
+            background: #8f7a66;
+            min-width: 50px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            position: relative;
+            background-color: var(--grid-bg-color);
+            border-radius: 6px;
+            padding: var(--gap-size);
+            width: 90vw;
+            height: 90vw;
+            max-width: 500px;
+            max-height: 500px;
+            display: grid;
+            gap: var(--gap-size);
+            touch-action: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); 
+        }
+
+        /* --- Tile Styles --- */
+        .tile {
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 rgba(0,0,0,0.1),
+                0 4px 0 rgba(0,0,0,0.15),
+                0 5px 5px rgba(0,0,0,0.1);
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s;
+        }
+
+        .tile:active {
+            transform: translateY(4px);
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 rgba(0,0,0,0.1),
+                0 0 0 rgba(0,0,0,0.15),
+                0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .tile.selected {
+            border: 4px solid #8f7a66;
+            transform: scale(0.95);
+        }
+
+        .tile.empty {
+            background-color: rgba(238, 228, 218, 0.35) !important;
+            box-shadow: none !important;
+            cursor: default;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #8f7a66;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            transition: opacity 0.2s, transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 4px 0 #796654; 
+        }
+
+        button:active {
+            background-color: #796654;
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #796654;
+        }
+
+        button.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: default;
+            box-shadow: none;
+            transform: translateY(2px);
+        }
+
+        /* --- Overlays --- */
+        
+        /* 勝利畫面 (保留在棋盤內的絕對定位) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(238, 228, 218, 0.85);
+            padding-bottom: 40%;
+        }
+        .overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .overlay h2 {
+            font-size: 60px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #776e65;
+        }
+
+        /* 聖經畫面 & 設定畫面 (全螢幕固定定位) */
+        .bible-overlay, .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            padding: 20px;
+        }
+
+        .bible-overlay.show, .settings-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bible-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #8b633e;
+        }
+        
+        .bible-text {
+            font-size: 16px;
+            line-height: 1.8;
+            text-align: left;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 60vh; 
+            overflow-y: auto;
+            font-family: "KaiTi", "BiauKai", serif;
+            font-weight: bold;
+        }
+
+        .settings-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .settings-menu button {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+        }
+        .grid-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        @media (max-width: 400px) {
+            h1 { font-size: 28px; }
+            .bible-text { font-size: 15px; line-height: 1.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Puzzle</h1>
+        <div class="info-box">
+            <div class="score-container">
+                <div class="score-title">Moves</div>
+                <div class="score-value" id="move-count">0</div>
+            </div>
+            <div class="score-container" id="time-box">
+                <div class="score-title">Time</div>
+                <div class="score-value" id="time-count">0</div>
+            </div>
+            <div class="score-container settings-btn" id="settings-btn" onclick="openSettings()">
+                ⚙️
+            </div>
+        </div>
+    </header>
+
+    <div class="game-container" id="grid">
+        <div class="overlay" id="overlay">
+            <h2>You Win!</h2>
+            <button onclick="initGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="bible-overlay" id="bible-overlay">
+        <div class="bible-title">詩篇 23 篇</div>
+        <div class="bible-text">
+耶和華是我的牧者，我必不致缺乏。
+他使我躺臥在青草地上，領我在可安歇的水邊。
+他使我的靈魂甦醒，為自己的名引導我走義路。
+我雖然行過死蔭的幽谷，也不怕遭害，
+因為你與我同在；你的杖，你的竿，都安慰我。
+在你敵人面前，你為我擺設筵席；
+你用油膏了我的頭，使我的福杯滿溢。
+我一生一世必有恩惠慈愛隨著我；
+我且要住在耶和華的殿中，直到永遠。
+        </div>
+        <button onclick="closeBible()">Close</button>
+    </div>
+
+    <div class="settings-overlay" id="settings-overlay">
+        <div id="settings-main" class="settings-menu">
+            <button onclick="showNewGameMenu()">New Game</button>
+            <button onclick="togglePreview()" id="preview-btn">Preview: On</button>
+            <button onclick="toggleSound()" id="sound-btn">Sound: On</button>
+            <button onclick="closeSettings()">Back</button>
+        </div>
+        <div id="settings-size" class="settings-menu" style="display: none;">
+            <div class="grid-selector">
+                <button onclick="changeSize(3)">3 x 3</button>
+                <button onclick="changeSize(4)">4 x 4</button>
+                <button onclick="changeSize(5)">5 x 5</button>
+                <button onclick="changeSize(6)">6 x 6</button>
+                <button onclick="changeSize(7)">7 x 7</button>
+                <button onclick="changeSize(8)">8 x 8</button>
+            </div>
+            <button onclick="showMainMenu()" style="margin-top: 15px;">Back</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="restart-btn" onclick="initGame()">Restart Level</button>
+    </div>
+
+    <script>
+        const gridElement = document.getElementById('grid');
+        const moveDisplay = document.getElementById('move-count');
+        const timeDisplay = document.getElementById('time-count');
+        const timeBox = document.getElementById('time-box');
+        const overlay = document.getElementById('overlay');
+        const bibleOverlay = document.getElementById('bible-overlay');
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const settingsMain = document.getElementById('settings-main');
+        const settingsSize = document.getElementById('settings-size');
+        const soundBtn = document.getElementById('sound-btn');
+        const previewBtn = document.getElementById('preview-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        let gridSize = 4;
+        let tiles = [];
+        let emptyIndex = 15;
+        let moves = 0;
+        let timer = 0;
+        let timerInterval = null;
+        let isGameActive = false;
+        
+        let isSoundOn = true;
+        let isPreviewEnabled = true; 
+        let previewTimeout = null;
+
+        const woodColors = [
+            { bg: "#eee4da", text: "#776e65" }, 
+            { bg: "#ede0c8", text: "#776e65" }, 
+            { bg: "#dcb386", text: "#776e65" }, 
+            { bg: "#c59b6d", text: "#f9f6f2" }, 
+            { bg: "#a87f56", text: "#f9f6f2" }, 
+            { bg: "#8b633e", text: "#f9f6f2" }, 
+            { bg: "#6e4727", text: "#f9f6f2" }, 
+            { bg: "#52331b", text: "#f9f6f2" } 
+        ];
+
+        const SoundManager = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            // 檢查並喚醒 AudioContext
+            checkResume: function() {
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            playMove: function() {
+                if (!isSoundOn) return;
+                if (!this.ctx) this.init();
+                
+                this.checkResume();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            },
+            playWin: function() {
+                if (!isSoundOn) return;
+                if (!this.ctx) this.init();
+                
+                this.checkResume();
+
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                const now = this.ctx.currentTime;
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    const startTime = now + (i * 0.1);
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.8);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 1);
+                });
+            }
+        };
+
+        let timeClickCount = 0;
+        let clickResetTimer = null;
+        let cheatSequence = [];
+        let isSwapMode = false;
+        let firstSwapIndex = null;
+
+        function initGame(newSize = null) {
+            SoundManager.init();
+            SoundManager.checkResume();
+            
+            if (newSize) {
+                gridSize = newSize;
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+            if (previewTimeout) clearTimeout(previewTimeout);
+            
+            moves = 0;
+            timer = 0;
+            isGameActive = false; 
+            moveDisplay.innerText = moves;
+            timeDisplay.innerText = timer;
+            
+            overlay.classList.remove('show');
+            bibleOverlay.classList.remove('show');
+            settingsOverlay.classList.remove('show');
+
+            restartBtn.classList.remove('disabled');
+
+            cheatSequence = [];
+            isSwapMode = false;
+            firstSwapIndex = null;
+            timeClickCount = 0;
+
+            const totalTiles = gridSize * gridSize;
+            
+            tiles = Array.from({length: totalTiles}, (_, i) => (i + 1) % totalTiles);
+            emptyIndex = totalTiles - 1;
+
+            gridElement.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gridElement.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            render();
+
+            if (isPreviewEnabled) {
+                previewTimeout = setTimeout(() => {
+                    startGameLogic();
+                }, 2000);
+            } else {
+                startGameLogic();
+            }
+        }
+
+        function startGameLogic() {
+            shuffleTiles(gridSize * 50); 
+            render();
+            startTimer();
+            isGameActive = true; 
+        }
+
+        function openSettings() {
+            showMainMenu();
+            settingsOverlay.classList.add('show');
+            restartBtn.classList.add('disabled');
+        }
+
+        function closeSettings() {
+            settingsOverlay.classList.remove('show');
+            restartBtn.classList.remove('disabled');
+        }
+
+        function showMainMenu() {
+            settingsMain.style.display = 'flex';
+            settingsSize.style.display = 'none';
+        }
+
+        function showNewGameMenu() {
+            settingsMain.style.display = 'none';
+            settingsSize.style.display = 'grid'; 
+        }
+
+        function changeSize(size) {
+            initGame(size);
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            soundBtn.innerText = isSoundOn ? "Sound: On" : "Sound: Off";
+        }
+
+        function togglePreview() {
+            isPreviewEnabled = !isPreviewEnabled;
+            previewBtn.innerText = isPreviewEnabled ? "Preview: On" : "Preview: Off";
+        }
+
+        timeBox.addEventListener('click', () => {
+            timeClickCount++;
+            clearTimeout(clickResetTimer);
+            clickResetTimer = setTimeout(() => {
+                timeClickCount = 0;
+            }, 800);
+
+            if (timeClickCount >= 3) {
+                forceWin();
+                timeClickCount = 0;
+            }
+        });
+
+        function forceWin() {
+            isGameActive = false;
+            clearInterval(timerInterval);
+            if (previewTimeout) clearTimeout(previewTimeout);
+            overlay.classList.add('show');
+            SoundManager.playWin();
+            restartBtn.classList.add('disabled');
+        }
+
+        function closeBible() {
+            bibleOverlay.classList.remove('show');
+            restartBtn.classList.remove('disabled');
+        }
+
+        function render() {
+            const oldTiles = gridElement.querySelectorAll('.tile');
+            oldTiles.forEach(t => t.remove());
+
+            const fontSize = Math.max(12, Math.floor(120 / gridSize)); 
+
+            tiles.forEach((num, index) => {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                tile.style.fontSize = fontSize + 'px';
+                
+                if (isSwapMode && index === firstSwapIndex) {
+                    tile.classList.add('selected');
+                }
+
+                if (num === 0) {
+                    tile.classList.add('empty');
+                    tile.innerText = "";
+                } else {
+                    tile.innerText = num;
+                    tile.setAttribute('data-val', num);
+                    
+                    const groupIndex = Math.floor((num - 1) / gridSize);
+                    const colorIndex = groupIndex % woodColors.length;
+                    const style = woodColors[colorIndex];
+                    
+                    tile.style.backgroundColor = style.bg;
+                    tile.style.color = style.text;
+
+                    const clickHandler = (e) => {
+                        e.preventDefault(); 
+                        handleTileInteract(index, num);
+                    };
+
+                    tile.addEventListener('click', clickHandler);
+                    tile.addEventListener('touchstart', clickHandler, {passive: false});
+                }
+                
+                gridElement.insertBefore(tile, overlay);
+            });
+        }
+
+        function handleTileInteract(index, num) {
+            if (!isGameActive) return;
+
+            if (isSwapMode) {
+                if (firstSwapIndex === null) {
+                    firstSwapIndex = index;
+                    render();
+                } else {
+                    swap(firstSwapIndex, index);
+                    if (tiles[firstSwapIndex] === 0) emptyIndex = firstSwapIndex;
+                    if (tiles[index] === 0) emptyIndex = index;
+
+                    isSwapMode = false;
+                    firstSwapIndex = null;
+                    cheatSequence = [];
+                    render();
+                    checkWin();
+                }
+                return;
+            }
+
+            if (num !== 0) {
+                cheatSequence.push(num);
+                if (cheatSequence.length > 8) cheatSequence.shift();
+                
+                const seqStr = cheatSequence.join('');
+
+                if (seqStr === '85893861') {
+                    bibleOverlay.classList.add('show');
+                    restartBtn.classList.add('disabled');
+                    cheatSequence = [];
+                }
+
+                if (seqStr.endsWith('1588')) {
+                    isSwapMode = true;
+                    // Alert 移除，防止音效問題和干擾
+                    return;
+                }
+            }
+
+            handleMove(index);
+        }
+
+        function handleMove(index) {
+            const row = Math.floor(index / gridSize);
+            const col = index % gridSize;
+            const emptyRow = Math.floor(emptyIndex / gridSize);
+            const emptyCol = emptyIndex % gridSize;
+
+            const isAdjacent = (Math.abs(row - emptyRow) + Math.abs(col - emptyCol)) === 1;
+
+            if (isAdjacent) {
+                swap(index, emptyIndex);
+                emptyIndex = index;
+                moves++;
+                moveDisplay.innerText = moves;
+                SoundManager.playMove();
+                render();
+                checkWin();
+            }
+        }
+
+        function swap(i, j) {
+            [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+
+        function shuffleTiles(steps) {
+            for (let i = 0; i < steps; i++) {
+                const neighbors = getNeighbors(emptyIndex);
+                const randomNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+                swap(emptyIndex, randomNeighbor);
+                emptyIndex = randomNeighbor;
+            }
+        }
+
+        function getNeighbors(index) {
+            const neighbors = [];
+            const row = Math.floor(index / gridSize);
+            const col = index % gridSize;
+            
+            if (row > 0) neighbors.push(index - gridSize);
+            if (row < gridSize - 1) neighbors.push(index + gridSize);
+            if (col > 0) neighbors.push(index - 1);
+            if (col < gridSize - 1) neighbors.push(index + 1);
+            
+            return neighbors;
+        }
+
+        function checkWin() {
+            const isWin = tiles.every((val, index) => {
+                if (index === gridSize * gridSize - 1) return val === 0;
+                return val === index + 1;
+            });
+
+            if (isWin) {
+                forceWin();
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timer++;
+                timeDisplay.innerText = timer;
+            }, 1000);
+        }
+
+        initGame();
+
+    </script>
+</body>
+</html>
